@@ -3,12 +3,6 @@ pipeline {
 
     stages {
 
-        stage('Clone Code') {
-            steps {
-                git 'https://github.com/YOUR_USERNAME/YOUR_REPO.git'
-            }
-        }
-
         stage('Build Image') {
             steps {
                 sh 'docker build -t task-app .'
