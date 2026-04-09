@@ -35,12 +35,13 @@ pipeline {
             }
         }
 
-        stage('Build (App Check)') {
+        stage('Build (PHP Check via Docker)') {
             steps {
-                echo "Basic syntax check..."
+                echo "Checking PHP syntax using Docker..."
 
                 sh '''
-                php -l app/info.php
+                docker run --rm -v $(pwd)/app:/app php:8.2-cli \
+                php -l /app/info.php
                 '''
             }
         }
@@ -64,7 +65,7 @@ pipeline {
 
                 docker run -d -p 8090:80 --name $CONTAINER_NAME $IMAGE_NAME
 
-                sleep 5
+                sleep 8
 
                 curl -f http://localhost:8090/index.html || exit 1
                 '''
