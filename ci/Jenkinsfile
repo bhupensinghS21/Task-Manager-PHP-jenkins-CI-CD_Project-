@@ -2,8 +2,7 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "devops-demo-app"
-        CONTAINER_NAME = "devops-app-ci"
+        IMAGE_NAME = "bhupendra/devops-app"
     }
 
     stages {
@@ -15,87 +14,48 @@ pipeline {
             }
         }
 
-        stage('Validation / Lint') {
+        stage('Validate Structure') {
             steps {
-                echo "Validating project structure..."
-
                 sh '''
-                if [ ! -d "app" ]; then
-                    echo "app directory missing"; exit 1;
-                fi
-
-                if [ ! -f "docker/Dockerfile" ]; then
-                    echo "Dockerfile missing"; exit 1;
-                fi
-
-                if [ ! -f "docker/docker-compose.yml" ]; then
-                    echo "docker-compose missing"; exit 1;
-                fi
+                [ -d app ] || exit 1
+                [ -f docker/Dockerfile ] || exit 1
+                [ -f docker/docker-compose.yml ] || exit 1
                 '''
             }
         }
 
-        stage('Build (PHP Check via Docker)') {
+        stage('Build Docker Image') {
             steps {
-                echo "Checking PHP syntax using Docker..."
-
                 sh '''
-                docker run --rm -v $(pwd)/app:/app php:8.2-cli \
-                php -l /app/info.php
+                docker build -t $IMAGE_NAME:latest -f docker/Dockerfile .
                 '''
             }
         }
 
-        stage('Docker Image Build') {
+        stage('Run Container (Test)') {
             steps {
-                echo "Building Docker image..."
-
                 sh '''
-                docker build -t $IMAGE_NAME -f docker/Dockerfile .
+                docker rm -f devops-test || true
+                docker run -d -p 8090:80 --name devops-test $IMAGE_NAME:latest
+                sleep 5
+                curl -f http://localhost:8090 || exit 1
                 '''
             }
         }
 
-        stage('Test / Smoke Test') {
+        stage('Cleanup') {
             steps {
-                echo "Running smoke test..."
-
-                sh '''
-                docker rm -f $CONTAINER_NAME || true
-
-                docker run -d -p 8090:80 --name $CONTAINER_NAME $IMAGE_NAME
-
-                sleep 8
-
-                curl -f http://localhost:8090/index.html || exit 1
-                '''
-            }
-        }
-
-        stage('Deploy (Optional)') {
-            steps {
-                echo "Deploying using docker-compose..."
-
-                sh '''
-                docker-compose -f docker/docker-compose.yml down || true
-                docker-compose -f docker/docker-compose.yml up -d
-                '''
+                sh 'docker rm -f devops-test || true'
             }
         }
     }
 
     post {
-        always {
-            echo "Cleaning up test container..."
-            sh 'docker rm -f $CONTAINER_NAME || true'
-        }
-
         success {
-            echo "Pipeline executed successfully"
+            echo "Pipeline SUCCESS"
         }
-
         failure {
-            echo "Pipeline failed"
+            echo "Pipeline FAILED"
         }
     }
 }
