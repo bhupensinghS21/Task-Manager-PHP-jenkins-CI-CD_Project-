@@ -1,0 +1,100 @@
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME = "devops-demo-app"
+        CONTAINER_NAME = "devops-app-ci"
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                echo "Cloning repository..."
+                checkout scm
+            }
+        }
+
+        stage('Validation / Lint') {
+            steps {
+                echo "Validating project structure..."
+
+                sh '''
+                if [ ! -d "app" ]; then
+                    echo "app directory missing"; exit 1;
+                fi
+
+                if [ ! -f "docker/Dockerfile" ]; then
+                    echo "Dockerfile missing"; exit 1;
+                fi
+
+                if [ ! -f "docker/docker-compose.yml" ]; then
+                    echo "docker-compose missing"; exit 1;
+                fi
+                '''
+            }
+        }
+
+        stage('Build (App Check)') {
+            steps {
+                echo "Basic syntax check..."
+
+                sh '''
+                php -l app/info.php
+                '''
+            }
+        }
+
+        stage('Docker Image Build') {
+            steps {
+                echo "Building Docker image..."
+
+                sh '''
+                docker build -t $IMAGE_NAME -f docker/Dockerfile .
+                '''
+            }
+        }
+
+        stage('Test / Smoke Test') {
+            steps {
+                echo "Running smoke test..."
+
+                sh '''
+                docker rm -f $CONTAINER_NAME || true
+
+                docker run -d -p 8090:80 --name $CONTAINER_NAME $IMAGE_NAME
+
+                sleep 5
+
+                curl -f http://localhost:8090/index.html || exit 1
+                '''
+            }
+        }
+
+        stage('Deploy (Optional)') {
+            steps {
+                echo "Deploying using docker-compose..."
+
+                sh '''
+                docker-compose -f docker/docker-compose.yml down || true
+                docker-compose -f docker/docker-compose.yml up -d
+                '''
+            }
+        }
+    }
+
+    post {
+        always {
+            echo "Cleaning up test container..."
+            sh 'docker rm -f $CONTAINER_NAME || true'
+        }
+
+        success {
+            echo "Pipeline executed successfully"
+        }
+
+        failure {
+            echo "Pipeline failed"
+        }
+    }
+}
