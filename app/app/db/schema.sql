@@ -1,0 +1,10 @@
+CREATE DATABASE IF NOT EXISTS devopsdb;
+USE devopsdb;
+
+CREATE TABLE tasks (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100),
+    designation VARCHAR(100),
+    task VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

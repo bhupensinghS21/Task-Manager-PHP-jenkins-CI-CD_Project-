@@ -1,0 +1,21 @@
+- name: Configure local app environment
+  hosts: local
+  tasks:
+    - name: Create project directory
+      file:
+        path: ~/project
+        state: directory
+
+    - name: Copy app files
+      copy:
+        src: ~/project/app/
+        dest: ~/local_app/
+        mode: 0755
+
+    - name: Run healthcheck script
+      shell: bash ~/project/scripts/healthcheck.sh
+      register: result
+
+    - name: Show result
+      debug:
+        var: result.stdout

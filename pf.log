@@ -1,0 +1,11 @@
+nohup: ignoring input
+Forwarding from 127.0.0.1:30080 -> 80
+Forwarding from [::1]:30080 -> 80
+Handling connection for 30080
+Handling connection for 30080
+Handling connection for 30080
+Handling connection for 30080
+E0409 16:45:33.821487  128020 portforward.go:424] "Unhandled Error" err=<
+	an error occurred forwarding 30080 -> 80: error forwarding port 80 to pod 152adf2a612751a779c92d8da0f094c8de7bd5a405da4137c30af2a251b0c0b0, uid : exit status 1: 2026/04/09 16:45:33 socat[78023] E connect(5, AF=2 127.0.0.1:80, 16): Connection refused
+ >
+error: lost connection to pod
