@@ -1,0 +1,4 @@
+*.tfstate
+*.sql
+*.tar.gz
+logs/
